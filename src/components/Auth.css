@@ -1,0 +1,56 @@
+.AuthForm {
+  width: 100%;
+  padding: 1.5rem;
+  background-color: #141414;
+  border: 1px solid #262626;
+  border-radius: 0.5rem;
+}
+
+.AuthField {
+  margin-bottom: 1rem;
+}
+
+.AuthInput {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #1c1c1c;
+  border: 1px solid #262626;
+  color: white;
+  border-radius: 0.375rem;
+  outline: none;
+  font-size: 0.875rem;
+}
+
+.AuthInput:focus {
+  border-color: #404040;
+  box-shadow: 0 0 0 1px #404040;
+}
+
+.AuthInput::placeholder {
+  color: #6b7280;
+}
+
+.AuthButton {
+  transition: all 200ms !important;
+}
+
+.AuthButton[data-state="loading"] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.AuthError {
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  background-color: rgba(153, 27, 27, 0.5);
+  border: 1px solid rgb(153, 27, 27);
+  color: rgb(252, 165, 165);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.AuthMessage {
+  font-size: 0.75rem;
+  color: rgb(252, 165, 165);
+  margin-top: 0.25rem;
+} 
