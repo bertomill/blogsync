@@ -25,12 +25,10 @@ A personal blog reading and note-taking application that helps you stay on top o
 
 ### Reading Experience
 - [x] Check for new articles since last visit
-- [ ] Mark articles as read/unread
-- [ ] Track reading progress
-- [ ] Quick note-taking interface while reading
+- [x] Mark articles as read/unread
 
 ### Future Features
-- [ ] Export notes functionality
+- [x] Export notes functionality
 - [ ] Search through notes
 - [ ] Tags/Categories for blogs
 - [ ] Reading time estimates

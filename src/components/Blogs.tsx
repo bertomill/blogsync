@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { Button, Card } from '@radix-ui/themes';
 import { seedBlogs } from '@/lib/seedBlogs';
 import BlogNotes from './BlogNotes';
+import Articles from './Articles';
 
 interface Blog {
   id: string;
@@ -17,6 +18,7 @@ export default function Blogs() {
   const [error, setError] = useState<string | null>(null);
   const [seeding, setSeeding] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
+  const [showingArticles, setShowingArticles] = useState(false);
 
   useEffect(() => {
     fetchBlogs();
@@ -171,13 +173,26 @@ export default function Blogs() {
                   <span className="text-sm text-gray-500">
                     Last visited: {formatDate(blog.last_visited)}
                   </span>
-                  <Button 
-                    variant="soft" 
-                    color="blue"
-                    onClick={() => setSelectedBlog(blog)}
-                  >
-                    Take Notes
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="soft" 
+                      onClick={() => {
+                        setSelectedBlog(blog);
+                        setShowingArticles(false);
+                      }}
+                    >
+                      Take Notes
+                    </Button>
+                    <Button 
+                      variant="soft" 
+                      onClick={() => {
+                        setSelectedBlog(blog);
+                        setShowingArticles(true);
+                      }}
+                    >
+                      View Articles
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -199,12 +214,39 @@ export default function Blogs() {
         </div>
       </Card>
 
-      {selectedBlog && (
+      {selectedBlog && !showingArticles && (
         <BlogNotes
           blogId={selectedBlog.id}
           blogName={selectedBlog.name}
           onClose={() => setSelectedBlog(null)}
         />
+      )}
+
+      {selectedBlog && showingArticles && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-[#141414] border border-[#262626] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-[#262626]">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-100">
+                  Articles from {selectedBlog.name}
+                </h2>
+                <Button 
+                  variant="soft" 
+                  color="gray" 
+                  onClick={() => {
+                    setSelectedBlog(null);
+                    setShowingArticles(false);
+                  }}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+            <div className="p-6">
+              <Articles blogId={selectedBlog.id} blogName={selectedBlog.name} />
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

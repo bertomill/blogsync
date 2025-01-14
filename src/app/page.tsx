@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Button, Text, Card } from '@radix-ui/themes'
 import { useRouter } from 'next/navigation'
 import Blogs from '@/components/Blogs'
+import ExportNotes from '@/components/ExportNotes'
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -35,13 +36,16 @@ export default function Home() {
           <Text size="6" weight="bold">
             Welcome, {user.email}
           </Text>
-          <Button
-            onClick={handleSignOut}
-            variant="soft"
-            color="red"
-          >
-            Sign Out
-          </Button>
+          <div className="flex items-center gap-4">
+            <ExportNotes />
+            <Button
+              onClick={handleSignOut}
+              variant="soft"
+              color="red"
+            >
+              Sign Out
+            </Button>
+          </div>
         </div>
         <Text color="gray">
           You are now signed in to your account!
