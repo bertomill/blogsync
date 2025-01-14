@@ -16,21 +16,44 @@ export default function Auth() {
     setIsLoading(true)
     setError(null)
     
-    const { error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: undefined,
-        data: {
-          email_confirm: false
+    try {
+      // Validate email and password
+      if (!email || !password) {
+        setError('Email and password are required')
+        return
+      }
+
+      console.log('Attempting to sign up with:', { email, hasPassword: !!password })
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}`,
+        }
+      })
+      
+      if (signUpError) {
+        console.error('Sign up error:', signUpError)
+        setError(signUpError.message)
+      } else {
+        console.log('Sign up successful:', data)
+        // Attempt to sign in immediately after sign up
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        })
+        
+        if (signInError) {
+          console.error('Auto sign-in error:', signInError)
+          setError('Account created but could not sign in automatically. Please try signing in.')
         }
       }
-    })
-    
-    if (signUpError) {
-      setError(signUpError.message)
+    } catch (err) {
+      console.error('Unexpected error during sign up:', err)
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
