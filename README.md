@@ -35,6 +35,9 @@ A personal blog reading and note-taking application that helps you stay on top o
 - [ ] Reading time estimates
 - [ ] Favorite/bookmark articles
 
+###Generation
+- [ ] Generate podcast from articles
+
 ## Tech Stack
 
 - Next.js 14 (App Router)

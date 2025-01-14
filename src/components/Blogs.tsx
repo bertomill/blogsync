@@ -19,6 +19,10 @@ export default function Blogs() {
   const [seeding, setSeeding] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<Blog | null>(null);
   const [showingArticles, setShowingArticles] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newBlogName, setNewBlogName] = useState('');
+  const [newBlogUrl, setNewBlogUrl] = useState('');
+  const [addingBlog, setAddingBlog] = useState(false);
 
   useEffect(() => {
     fetchBlogs();
@@ -115,6 +119,39 @@ export default function Blogs() {
     return visitDate.toDateString() === now.toDateString();
   };
 
+  const handleAddBlog = async () => {
+    if (!newBlogName.trim() || !newBlogUrl.trim()) {
+      setError('Please fill in both name and URL');
+      return;
+    }
+
+    setAddingBlog(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not found');
+
+      const { error } = await supabase
+        .from('blogs')
+        .insert([{
+          name: newBlogName.trim(),
+          url: newBlogUrl.trim(),
+          user_id: user.id
+        }]);
+
+      if (error) throw error;
+
+      // Reset form and refresh blogs
+      setNewBlogName('');
+      setNewBlogUrl('');
+      setShowAddForm(false);
+      await fetchBlogs();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add blog');
+    } finally {
+      setAddingBlog(false);
+    }
+  };
+
   if (loading) return (
     <div className="text-gray-300 text-center mt-8">
       Loading blogs...
@@ -132,12 +169,71 @@ export default function Blogs() {
       <Card className="mt-6 max-w-4xl mx-auto p-6 bg-[#141414] border border-[#262626]">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-gray-100">My AI Blogs</h2>
-          {blogs.length > 0 && (
-            <Button onClick={openAllBlogs} variant="soft">
-              Open All Blogs
+          <div className="flex gap-2">
+            {blogs.length > 0 && (
+              <Button onClick={openAllBlogs} variant="soft">
+                Open All Blogs
+              </Button>
+            )}
+            <Button 
+              onClick={() => setShowAddForm(!showAddForm)} 
+              variant="soft"
+              color="blue"
+            >
+              Add Blog
             </Button>
-          )}
+          </div>
         </div>
+
+        {showAddForm && (
+          <div className="mb-6 p-4 border border-[#262626] rounded-lg bg-[#1a1a1a]">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Blog Name
+                </label>
+                <input
+                  type="text"
+                  value={newBlogName}
+                  onChange={(e) => setNewBlogName(e.target.value)}
+                  placeholder="Enter blog name..."
+                  className="w-full bg-[#141414] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Blog URL
+                </label>
+                <input
+                  type="url"
+                  value={newBlogUrl}
+                  onChange={(e) => setNewBlogUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full bg-[#141414] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button 
+                  variant="soft" 
+                  color="gray" 
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewBlogName('');
+                    setNewBlogUrl('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleAddBlog}
+                  disabled={addingBlog || !newBlogName.trim() || !newBlogUrl.trim()}
+                >
+                  {addingBlog ? 'Adding...' : 'Add Blog'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="grid gap-4">
           {blogs.map((blog) => (
