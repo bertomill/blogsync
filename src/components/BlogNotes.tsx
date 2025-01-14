@@ -40,7 +40,6 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [currentArticleId, setCurrentArticleId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('newest');
   const [filterBy, setFilterBy] = useState<FilterOption>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -59,14 +58,7 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
     setArticleUrl('');
     setArticleAuthor('');
     setArticleDate('');
-    setCurrentArticleId(null);
     onClose();
-  };
-
-  // Handle article info changes
-  const handleArticleInfoChange = () => {
-    // Reset article ID when article info changes
-    setCurrentArticleId(null);
   };
 
   const fetchNotes = useCallback(async () => {
