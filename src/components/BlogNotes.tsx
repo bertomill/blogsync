@@ -60,13 +60,6 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
     setCurrentArticleId(null);
   };
 
-  useEffect(() => {
-    const fetchAndSetNotes = async () => {
-      await fetchNotes();
-    };
-    fetchAndSetNotes();
-  }, [blogId, fetchNotes]);
-
   const fetchNotes = useCallback(async () => {
     try {
       const { data, error: fetchError } = await supabase
@@ -81,6 +74,13 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
       console.error('Error fetching notes:', err);
     }
   }, [blogId]);
+
+  useEffect(() => {
+    const fetchAndSetNotes = async () => {
+      await fetchNotes();
+    };
+    fetchAndSetNotes();
+  }, [blogId, fetchNotes]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

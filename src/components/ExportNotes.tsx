@@ -176,7 +176,7 @@ export default function ExportNotes() {
         variant="soft"
       >
         <DownloadIcon className="mr-2" />
-        {loading ? 'Exporting...' : 'Export Notes'}
+        {loading ? 'Exporting...' : 'Export All Notes'}
       </Button>
 
       {error && (

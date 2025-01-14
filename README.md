@@ -27,8 +27,9 @@ A personal blog reading and note-taking application that helps you stay on top o
 - [x] Check for new articles since last visit
 - [x] Mark articles as read/unread
 
-### Future Features
-- [x] Export notes functionality
+### Export & Organization
+- [x] Export all notes (Markdown, JSON, CSV)
+- [ ] Export notes per blog
 - [ ] Search through notes
 - [ ] Tags/Categories for blogs
 - [ ] Reading time estimates

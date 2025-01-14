@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@radix-ui/themes';
 import { TrashIcon } from '@radix-ui/react-icons';
@@ -25,11 +25,7 @@ export default function Articles({ blogId, blogName }: ArticlesProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchArticles();
-  }, [blogId]);
-
-  const fetchArticles = async () => {
+  const fetchArticles = useCallback(async () => {
     try {
       const { data, error: fetchError } = await supabase
         .from('articles')
@@ -45,7 +41,11 @@ export default function Articles({ blogId, blogName }: ArticlesProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [blogId]);
+
+  useEffect(() => {
+    fetchArticles();
+  }, [fetchArticles]);
 
   const toggleReadStatus = async (articleId: string, currentStatus: boolean) => {
     try {
