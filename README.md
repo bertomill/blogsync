@@ -29,8 +29,8 @@ A personal blog reading and note-taking application that helps you stay on top o
 
 ### Export & Organization
 - [x] Export all notes (Markdown, JSON, CSV)
-- [ ] Export notes per blog
-- [ ] Search through notes
+- [x] Export notes per blog
+- [x] Search through notes
 - [ ] Tags/Categories for blogs
 - [ ] Reading time estimates
 - [ ] Favorite/bookmark articles
