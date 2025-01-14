@@ -46,13 +46,19 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
   const [searchQuery, setSearchQuery] = useState('');
   const [exportFormat, setExportFormat] = useState<'markdown' | 'json' | 'csv'>('markdown');
   const [exportLoading, setExportLoading] = useState(false);
+  const [articleAuthor, setArticleAuthor] = useState('');
+  const [articleDate, setArticleDate] = useState('');
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Reset all state when modal is closed
   const handleClose = () => {
+    // Clear all fields when closing the modal
     setExcerpt('');
     setPersonalNote('');
     setArticleTitle('');
     setArticleUrl('');
+    setArticleAuthor('');
+    setArticleDate('');
     setCurrentArticleId(null);
     onClose();
   };
@@ -94,84 +100,51 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not found');
 
-      // Only create article if we don't have one or if article info changed
-      let articleId = currentArticleId;
-      if (!articleId && articleUrl && articleTitle) {
-        console.log('Creating new article...');
-        const { data: articleData, error: articleError } = await supabase
+      // Create article first if title and URL are provided
+      let articleId = null;
+      if (articleTitle.trim() && articleUrl.trim()) {
+        const { data: article, error: articleError } = await supabase
           .from('articles')
-          .insert({
+          .insert([{
+            title: articleTitle.trim(),
+            url: articleUrl.trim(),
             blog_id: blogId,
             user_id: user.id,
-            title: articleTitle,
-            url: articleUrl,
-          })
+            author: articleAuthor.trim() || null,
+            date_published: articleDate || null
+          }])
           .select()
           .single();
 
-        if (articleError) {
-          console.error('Article creation error details:', {
-            error: articleError,
-            code: articleError.code,
-            message: articleError.message,
-            details: articleError.details,
-            hint: articleError.hint
-          });
-          throw new Error(`Failed to create article: ${articleError.message}`);
-        }
-        
-        if (!articleData) {
-          throw new Error('No article data returned after creation');
-        }
-
-        console.log('Article created successfully:', articleData);
-        articleId = articleData.id;
-        setCurrentArticleId(articleId);
+        if (articleError) throw articleError;
+        articleId = article.id;
       }
 
       // Create the note
-      const newNoteData = {
-        blog_id: blogId,
-        user_id: user.id,
-        article_id: articleId,
-        article_title: articleTitle || null,
-        article_url: articleUrl || null,
-        excerpt,
-        personal_note: personalNote,
-      };
-
-      const { data: createdNote, error: insertError } = await supabase
+      const { error: noteError } = await supabase
         .from('notes')
-        .insert(newNoteData)
-        .select()
-        .single();
+        .insert([{
+          blog_id: blogId,
+          user_id: user.id,
+          article_id: articleId,
+          excerpt: excerpt.trim(),
+          personal_note: personalNote.trim()
+        }]);
 
-      if (insertError) {
-        console.error('Note creation error details:', {
-          error: insertError,
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details,
-          hint: insertError.hint
-        });
-        throw new Error(`Failed to create note: ${insertError.message}`);
-      }
+      if (noteError) throw noteError;
 
-      if (!createdNote) {
-        throw new Error('No note data returned after creation');
-      }
-
-      console.log('Note created successfully:', createdNote);
-      setNotes([createdNote, ...notes]);
-      // Only clear excerpt and personal note, keep article info
+      // Reset only the note content, preserve article details
       setExcerpt('');
       setPersonalNote('');
+      
+      // Show success notification
+      setShowSuccess(true);
+      setTimeout(() => setShowSuccess(false), 2000);
+
+      // Refresh notes
+      await fetchNotes();
     } catch (err) {
-      console.error('Full error details:', {
-        error: err,
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined
-      });
+      console.error('Error saving note:', err);
       setError(err instanceof Error ? err.message : 'Failed to save note');
     } finally {
       setLoading(false);
@@ -340,36 +313,54 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
         {!showHistory ? (
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
-                  Article Title (optional)
-                </label>
-                <input
-                  type="text"
-                  value={articleTitle}
-                  onChange={(e) => {
-                    setArticleTitle(e.target.value);
-                    handleArticleInfoChange();
-                  }}
-                  placeholder="Enter article title..."
-                  className="w-full bg-[#1a1a1a] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-300">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
                   Article URL (optional)
                 </label>
                 <input
                   type="url"
                   value={articleUrl}
-                  onChange={(e) => {
-                    setArticleUrl(e.target.value);
-                    handleArticleInfoChange();
-                  }}
+                  onChange={(e) => setArticleUrl(e.target.value)}
                   placeholder="https://..."
-                  className="w-full bg-[#1a1a1a] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-[#141414] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Article Title (optional)
+                </label>
+                <input
+                  type="text"
+                  value={articleTitle}
+                  onChange={(e) => setArticleTitle(e.target.value)}
+                  placeholder="Enter article title..."
+                  className="w-full bg-[#141414] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Author (optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={articleAuthor}
+                    onChange={(e) => setArticleAuthor(e.target.value)}
+                    placeholder="Article author..."
+                    className="w-full bg-[#141414] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-1">
+                    Publication Date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={articleDate}
+                    onChange={(e) => setArticleDate(e.target.value)}
+                    className="w-full bg-[#141414] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
             </div>
 
@@ -513,6 +504,34 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
             </div>
           </div>
         )}
+
+        {/* Success notification */}
+        <div
+          className={`fixed bottom-8 right-8 transform transition-all duration-300 ease-out ${
+            showSuccess 
+              ? 'translate-y-0 opacity-100' 
+              : 'translate-y-4 opacity-0 pointer-events-none'
+          }`}
+        >
+          <div className="bg-[#1a1f2c] border border-blue-500/30 rounded-lg px-4 py-2 shadow-lg">
+            <div className="flex items-center gap-2 text-blue-400">
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              <span className="text-sm">Note saved</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
