@@ -5,6 +5,7 @@ import Auth from '@/components/Auth'
 import { supabase } from '@/lib/supabase'
 import { Button, Text, Card } from '@radix-ui/themes'
 import { useRouter } from 'next/navigation'
+import Blogs from '@/components/Blogs'
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -46,6 +47,7 @@ export default function Home() {
           You are now signed in to your account!
         </Text>
       </Card>
+      <Blogs />
     </div>
   )
 }
