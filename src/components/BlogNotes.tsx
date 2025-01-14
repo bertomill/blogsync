@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Button, Card, TextField } from '@radix-ui/themes';
+import { Button, Select } from '@radix-ui/themes';
 
 interface Note {
   id: string;
@@ -27,6 +27,9 @@ interface GroupedNotes {
   };
 }
 
+type SortOption = 'newest' | 'oldest' | 'article';
+type FilterOption = 'all' | 'with-article' | 'without-article';
+
 export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps) {
   const [notes, setNotes] = useState<Note[]>([]);
   const [excerpt, setExcerpt] = useState('');
@@ -37,6 +40,9 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
   const [error, setError] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [currentArticleId, setCurrentArticleId] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('newest');
+  const [filterBy, setFilterBy] = useState<FilterOption>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Reset all state when modal is closed
   const handleClose = () => {
@@ -55,10 +61,13 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
   };
 
   useEffect(() => {
-    fetchNotes();
-  }, [blogId]);
+    const fetchAndSetNotes = async () => {
+      await fetchNotes();
+    };
+    fetchAndSetNotes();
+  }, [blogId, fetchNotes]);
 
-  const fetchNotes = async () => {
+  const fetchNotes = useCallback(async () => {
     try {
       const { data, error: fetchError } = await supabase
         .from('notes')
@@ -71,7 +80,7 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
     } catch (err) {
       console.error('Error fetching notes:', err);
     }
-  };
+  }, [blogId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,6 +190,42 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
     }, {});
   };
 
+  const filterAndSortNotes = (notes: Note[]) => {
+    let filteredNotes = [...notes];
+
+    // Apply filters
+    if (filterBy === 'with-article') {
+      filteredNotes = filteredNotes.filter(note => note.article_title);
+    } else if (filterBy === 'without-article') {
+      filteredNotes = filteredNotes.filter(note => !note.article_title);
+    }
+
+    // Apply search
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filteredNotes = filteredNotes.filter(note => 
+        note.excerpt.toLowerCase().includes(query) ||
+        note.personal_note.toLowerCase().includes(query) ||
+        (note.article_title && note.article_title.toLowerCase().includes(query))
+      );
+    }
+
+    // Apply sorting
+    if (sortBy === 'newest') {
+      filteredNotes.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else if (sortBy === 'oldest') {
+      filteredNotes.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    } else if (sortBy === 'article') {
+      filteredNotes.sort((a, b) => {
+        const titleA = a.article_title || '';
+        const titleB = b.article_title || '';
+        return titleA.localeCompare(titleB);
+      });
+    }
+
+    return filteredNotes;
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
       <div className="bg-[#141414] border border-[#262626] rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -282,8 +327,38 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
           </form>
         ) : (
           <div className="p-6">
+            <div className="mb-6 space-y-4">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search notes..."
+                    className="w-full bg-[#1a1a1a] border border-[#262626] rounded-lg p-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <Select.Root value={sortBy} onValueChange={(value) => setSortBy(value as SortOption)}>
+                  <Select.Trigger className="w-40" />
+                  <Select.Content>
+                    <Select.Item value="newest">Newest First</Select.Item>
+                    <Select.Item value="oldest">Oldest First</Select.Item>
+                    <Select.Item value="article">By Article</Select.Item>
+                  </Select.Content>
+                </Select.Root>
+                <Select.Root value={filterBy} onValueChange={(value) => setFilterBy(value as FilterOption)}>
+                  <Select.Trigger className="w-40" />
+                  <Select.Content>
+                    <Select.Item value="all">All Notes</Select.Item>
+                    <Select.Item value="with-article">With Article</Select.Item>
+                    <Select.Item value="without-article">Without Article</Select.Item>
+                  </Select.Content>
+                </Select.Root>
+              </div>
+            </div>
+
             <div className="space-y-8">
-              {Object.entries(groupNotesByArticle(notes)).map(([articleId, group]) => (
+              {Object.entries(groupNotesByArticle(filterAndSortNotes(notes))).map(([articleId, group]) => (
                 <div key={articleId} className="space-y-4">
                   {group.article_title && (
                     <div className="border-b border-[#262626] pb-2">
@@ -343,6 +418,12 @@ export default function BlogNotes({ blogId, blogName, onClose }: BlogNotesProps)
               {notes.length === 0 && (
                 <p className="text-center text-gray-500 py-4">
                   No notes added yet. Add your first note!
+                </p>
+              )}
+
+              {notes.length > 0 && filterAndSortNotes(notes).length === 0 && (
+                <p className="text-center text-gray-500 py-4">
+                  No notes match your search or filters.
                 </p>
               )}
             </div>

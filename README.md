@@ -21,10 +21,10 @@ A personal blog reading and note-taking application that helps you stay on top o
 - [x] Add personal notes for each excerpt
 - [x] Save notes with timestamps
 - [x] Link notes to specific articles/blogs
-- [ ] View history of notes per blog
+- [x] View history of notes per blog
 
 ### Reading Experience
-- [ ] Check for new articles since last visit
+- [x] Check for new articles since last visit
 - [ ] Mark articles as read/unread
 - [ ] Track reading progress
 - [ ] Quick note-taking interface while reading
