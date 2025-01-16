@@ -57,8 +57,8 @@ export default function Blogs() {
   };
 
   const handleVisit = async (blog: Blog) => {
-    // Open the blog in a new tab
-    window.open(blog.url, '_blank');
+    // Open the blog in a new window
+    window.open(blog.url, '_blank', 'width=1200,height=800');
 
     // Update the last_visited timestamp
     const { error } = await supabase

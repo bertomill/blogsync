@@ -37,6 +37,8 @@ A personal blog reading and note-taking application that helps you stay on top o
 
 ###Generation
 - [ ] Generate podcast from articles
+- [ ] Create a user profile for AI to get context on the users intent
+- [ ] Proprietary information - write your own blogs so the AI iunderstands your perspective
 
 ## Tech Stack
 
